@@ -21,7 +21,9 @@ public partial class MainWindow : Window
 {
 
     private TextBox townTextbox;
-    private TextBox stateTextbox;
+    private ComboBox stateDropdown;
+    private Label countryLabel;
+    private TextBox countryTextBox;
     private Button buttonSubmit;
 
     private Grid rootlayout;
@@ -49,6 +51,7 @@ public partial class MainWindow : Window
         searchSection.RowDefinitions.Add(new RowDefinition());
         searchSection.RowDefinitions.Add(new RowDefinition());
         searchSection.RowDefinitions.Add(new RowDefinition());
+        searchSection.RowDefinitions.Add(new RowDefinition());
         searchSection.ColumnDefinitions.Add(new ColumnDefinition());
         searchSection.ColumnDefinitions.Add(new ColumnDefinition());
 
@@ -66,22 +69,35 @@ public partial class MainWindow : Window
         Grid.SetColumn(townTextbox, 1);
         searchSection.Children.Add(townTextbox);
 
-        stateTextbox = new() { Margin = new Thickness(2) };
-        Grid.SetRow(stateTextbox, 1);
-        Grid.SetColumn(stateTextbox, 1);
-        searchSection.Children.Add(stateTextbox);
+        stateDropdown = new() { Margin = new Thickness(2) };
+        Grid.SetRow(stateDropdown, 1);
+        Grid.SetColumn(stateDropdown, 1);
+        stateDropdown.ItemsSource = GetUsStateAbbreviations();
+        stateDropdown.SelectionChanged += StateDropdown_SelectionChanged;
+        searchSection.Children.Add(stateDropdown);
+
+        countryLabel = new() { Content = "Country Name:" };
+        Grid.SetRow(countryLabel, 2);
+        countryLabel.Visibility = Visibility.Collapsed;
+        searchSection.Children.Add(countryLabel);
+
+        countryTextBox = new() { Margin = new Thickness(2) };
+        Grid.SetColumn(countryTextBox, 1);
+        Grid.SetRow(countryTextBox, 2);
+        countryTextBox.Visibility = Visibility.Collapsed;
+        searchSection.Children.Add(countryTextBox);
 
         // Create the two buttons, assign both to the third row and
         // assign the second button to the second column.
         Button buttonReset = new() { Margin = new Thickness(2), Content = "Reset" };
         buttonReset.Click += Reset_Click;
-        Grid.SetRow(buttonReset, 2);
+        Grid.SetRow(buttonReset, 3);
         searchSection.Children.Add(buttonReset);
 
         buttonSubmit = new() { Margin = new Thickness(2), Content = "Submit" };
         buttonSubmit.Click += async (sender, e) => await Submit_ClickAsync(sender, e);
         Grid.SetColumn(buttonSubmit, 1);
-        Grid.SetRow(buttonSubmit, 2);
+        Grid.SetRow(buttonSubmit, 3);
         searchSection.Children.Add(buttonSubmit);
 
         resultsSection = new StackPanel
@@ -127,9 +143,18 @@ public partial class MainWindow : Window
         buttonSubmit.IsEnabled = false; // disable button until processing is done
 
         string town = townTextbox.Text.ToLower();
-        string state = stateTextbox.Text.ToLower();
+        string state = stateDropdown.Text.ToLower();
+        string country = countryTextBox.Text.ToLower();
+        if (state.Equals("international"))
+        {
+            await SubmitFormAsyncInternational(town, country);
+        }
+        else
+        {
+            await SubmitFormAsync(town, state);
+        }
 
-        await SubmitFormAsync(town, state);
+
 
         buttonSubmit.IsEnabled = true; // enable button after processing
     }
@@ -148,7 +173,7 @@ public partial class MainWindow : Window
             string jsonResponse = _cache.Get("current_" + town + state).ToString();
             Console.WriteLine("Using cached data...");
             JsonNode? root = JsonNode.Parse(jsonResponse);
-            resultsBlock.Text = root?["current"]?["temp_f"]?.ToString();
+            resultsBlock.Text = $"{char.ToUpper(town[0]) + town.Substring(1)}, {char.ToUpper(state[0]) + state.Substring(1)}: " + root?["current"]?["temp_f"]?.ToString();
             Console.WriteLine(root?["current"]?["temp_f"]?.ToString());
         }
 
@@ -158,7 +183,36 @@ public partial class MainWindow : Window
             Console.WriteLine("No cached data available... adding now....");
             JsonNode jsonNode = await _apiService.makeRequest("current", town, state);
             _cache.Set("current_" + town + state, jsonNode, TimeSpan.FromMinutes(5));
-            resultsBlock.Text = jsonNode["current"]?["temp_f"]?.ToString();
+            resultsBlock.Text = $"{char.ToUpper(town[0]) + town.Substring(1)}, {char.ToUpper(state[0]) + state.Substring(1)}: " + jsonNode["current"]?["temp_f"]?.ToString();
+            Console.WriteLine(jsonNode["current"]?["temp_f"]?.ToString());
+        }
+    }
+
+    private async Task SubmitFormAsyncInternational(string town, string country)
+    {
+        // Hide search section and show loading state
+        searchSection.Visibility = Visibility.Collapsed;
+        resultsSection.Visibility = Visibility.Visible;
+        resultsBlock.Text = "Loading...";
+
+
+        // Attempt to retrieve data
+        if (_cache.TryGet<object>("current_" + town + country, out var weather))
+        {
+            string jsonResponse = _cache.Get("current_" + town + country).ToString();
+            Console.WriteLine("Using cached data...");
+            JsonNode? root = JsonNode.Parse(jsonResponse);
+            resultsBlock.Text = $"{char.ToUpper(town[0]) + town.Substring(1)}, {char.ToUpper(country[0]) + country.Substring(1)}: " + root?["current"]?["temp_f"]?.ToString();
+            Console.WriteLine(root?["current"]?["temp_f"]?.ToString());
+        }
+
+        // date not in cache, so add it
+        else
+        {
+            Console.WriteLine("No cached data available... adding now....");
+            JsonNode jsonNode = await _apiService.makeRequest("current", town, country);
+            _cache.Set("current_" + town + country, jsonNode, TimeSpan.FromMinutes(5));
+            resultsBlock.Text = $"{char.ToUpper(town[0]) + town.Substring(1)}, {char.ToUpper(country[0]) + country.Substring(1)}: " + jsonNode["current"]?["temp_f"]?.ToString();
             Console.WriteLine(jsonNode["current"]?["temp_f"]?.ToString());
         }
     }
@@ -166,7 +220,8 @@ public partial class MainWindow : Window
     private void Reset_Click(object sender, RoutedEventArgs e)
     {
         townTextbox.Clear();
-        stateTextbox.Clear();
+        stateDropdown.Text = "";
+        countryTextBox.Clear();
     }
 
     // debug method to show all cache contents
@@ -192,13 +247,42 @@ public partial class MainWindow : Window
     private void ShowSearchSection()
     {
         // clear forms before going back
-        stateTextbox.Clear();
+        stateDropdown.Text = "";
         townTextbox.Clear();
+        countryTextBox.Clear();
 
 
         // swap visibility
         resultsSection.Visibility = Visibility.Collapsed;
         searchSection.Visibility = Visibility.Visible;
+    }
+
+    private List<string> GetUsStateAbbreviations()
+    {
+        return new List<string>
+            {
+                "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
+                "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
+                "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
+                "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
+                "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY", "International"
+            };
+    }
+
+    private void StateDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        string? selectedState = stateDropdown.SelectedItem as string;
+
+        if (selectedState == "International")
+        {
+            countryLabel.Visibility = Visibility.Visible;
+            countryTextBox.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            countryLabel.Visibility = Visibility.Collapsed;
+            countryTextBox.Visibility = Visibility.Collapsed;
+        }
     }
 
 }
