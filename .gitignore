@@ -1,0 +1,84 @@
+# ---- Build results ----
+
+bin/
+obj/
+[Bb]uild/
+[Ll]og/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+_.exe
+_.dll
+_.appx
+_.appxrecipe
+_.msix
+_.msixupload
+\*.msixbundle
+
+# ---- User-specific files ----
+
+_.user
+_.suo
+_.userosscache
+_.sln.docstates
+.vs/
+
+# ---- NuGet Packages ----
+
+_.nupkg
+_.snupkg
+
+# If you use package restore, you can safely ignore this folder
+
+packages/
+
+# Uncomment next line if you don't want to commit build output in packages/
+
+# !packages/build/
+
+# ---- IDE-specific ----
+
+.vscode/
+.idea/
+\*.DotSettings.user
+
+# ---- Build logs and temp ----
+
+_.log
+_.tlog
+_.tmp
+_.temp
+_.cache
+_.dbmdl
+
+# ---- Test and Coverage ----
+
+TestResults/
+_.coverage
+_.coveragexml
+
+# ---- Publish Output ----
+
+publish/
+dist/
+Release/
+Debug/
+out/
+
+# ---- ReSharper, Rider ----
+
+\_ReSharper*/
+*.ReSharper.user
+
+# ---- OS Files ----
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Configs that contain secrets (optional) ----
+
+appsettings.Development.json
+.env
+.env.local
