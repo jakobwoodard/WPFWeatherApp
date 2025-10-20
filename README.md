@@ -18,3 +18,5 @@ Some future improvements that I would like to add to this project are the follow
 </ul>
 
 To try this out all you would need is a free API key from WeatherAPI.com in your environment variables wherever you are running this program from and everything should work nice.
+
+![Alt text](/images/Home.png?raw=true "Optional Title")
