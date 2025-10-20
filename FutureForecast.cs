@@ -34,7 +34,7 @@ public class FutureForecastTab : UserControl
     private TextBlock resultsBlockTown;
     private TextBlock resultsBlockState;
     private ScrollViewer scrollViewer;
-    private WrapPanel forecastPanel;
+    private StackPanel forecastPanel;
 
 
     private readonly CacheService _cache;
@@ -237,7 +237,7 @@ public class FutureForecastTab : UserControl
         }
 
 
-        forecastPanel = new WrapPanel
+        forecastPanel = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             HorizontalAlignment = HorizontalAlignment.Center,
@@ -248,7 +248,8 @@ public class FutureForecastTab : UserControl
         scrollViewer = new ScrollViewer
         {
             Content = forecastPanel,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto
         };
 
 
@@ -263,7 +264,7 @@ public class FutureForecastTab : UserControl
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(6),
                 Margin = new Thickness(5),
-                Padding = new Thickness(10)
+                Padding = new Thickness(10),
             };
 
             StackPanel dayStack = new StackPanel();

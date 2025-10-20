@@ -31,8 +31,8 @@ public partial class MainWindow : Window
         _cache = cache;
         _apiService = apiService;
         Title = "Weather App";
-        Width = 500;
-        Height = 400;
+        Width = double.NaN;
+        Height = double.NaN;
 
         var tabControl = new TabControl();
 
