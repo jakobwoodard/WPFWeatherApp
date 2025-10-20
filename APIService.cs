@@ -1,4 +1,5 @@
 using System.Net.Http;
+using System.Reflection;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 
@@ -19,12 +20,14 @@ public class APIService
         _client = new HttpClient();
     }
 
-    public async Task<JsonNode> makeRequest(string requestType, string town, string state)
+    public async Task<JsonNode> makeRequest(string requestType, string town, string state, string days = "")
     {
         switch (requestType)
         {
             case "current":
                 return await getCurrentWeather(town, state);
+            case "forecast":
+                return await getWeatherForecast(town, state, days);
             default:
                 return null;
 
@@ -35,6 +38,34 @@ public class APIService
     private async Task<JsonNode> getCurrentWeather(string town, string state)
     {
         var request = "/current.json?key=" + _API_KEY + "&q=" + town + ", " + state + "&aqi=no";
+        try
+        {
+            Console.WriteLine("Attempting an API call....");
+            HttpResponseMessage response = await _client.GetAsync(_baseURL + request);
+            response.EnsureSuccessStatusCode();
+            string responseBody = await response.Content.ReadAsStringAsync();
+
+            Console.WriteLine("Successfully fetched API response....");
+            return JsonNode.Parse(responseBody);
+
+        }
+
+        catch (HttpRequestException e)
+        {
+            Console.WriteLine($"Request error: {e.Message}");
+            return JsonNode.Parse("{\"Status\": \"Failed to get the request\"}");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"An unexpected error occurred: {e.Message}");
+            return JsonNode.Parse("{\"Status\": \"An unexpected error occurred.\"}");
+        }
+
+    }
+
+    private async Task<JsonNode> getWeatherForecast(string town, string state, string days)
+    {
+        var request = "/forecast.json?key=" + _API_KEY + "&q=" + town + ", " + state + "&days=" + days + "&aqi=no&alerts=no";
         try
         {
             Console.WriteLine("Attempting an API call....");
