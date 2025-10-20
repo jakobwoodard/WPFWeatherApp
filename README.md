@@ -20,5 +20,24 @@ Some future improvements that I would like to add to this project are the follow
 To try this out all you would need is a free API key from WeatherAPI.com in your environment variables wherever you are running this program from and everything should work nice.
 
 Below are some of what the App looks like as of now (you can find these in the "images" folder as well")
-*Home Screen*
+
+**Home Screen**
 ![Alt text](/images/Home.png?raw=true "Optional Title")
+
+**Dropdown for States/International***
+![Alt text](/images/Dropdown.png?raw=true "Optional Title")
+
+**Hidden Country Field for International**
+![Alt text](/images/International.png?raw=true "Optional Title")
+
+**Current Weather Result with Console acknowledging no cache**
+![Alt text](/images/CurWeatherResultNoCache.png?raw=true "Optional Title")
+
+**Current Weather Result with Console acknowledging cache hit**
+![Alt text](/images/CurWeatherResultWithCache.png?raw=true "Optional Title")
+
+**Future Forecast Search**
+![Alt text](/images/FutureForecast.png?raw=true "Optional Title")
+
+**Future Forecast Result ScrollView**
+![Alt text](/images/FutureForecastResult.png?raw=true "Optional Title")
