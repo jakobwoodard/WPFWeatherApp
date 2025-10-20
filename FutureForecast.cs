@@ -33,6 +33,8 @@ public class FutureForecastTab : UserControl
     private TextBlock resultsBlockTemp;
     private TextBlock resultsBlockTown;
     private TextBlock resultsBlockState;
+    private ScrollViewer scrollViewer;
+    private WrapPanel forecastPanel;
 
 
     private readonly CacheService _cache;
@@ -220,6 +222,7 @@ public class FutureForecastTab : UserControl
             root = JsonNode.Parse(jsonResponse);
             resultsBlockTown.Text = $"{makeTitleCase(town)}";
             resultsBlockState.Text = $"{state.ToUpper()}";
+            resultsBlockTemp.Text = root["current"]?["temp_f"]?.ToString() + "\u00b0F";
         }
 
         // date not in cache, so add it
@@ -227,19 +230,27 @@ public class FutureForecastTab : UserControl
         {
             Console.WriteLine("No cached data available... adding now....");
             root = await _apiService.makeRequest("forecast", town, state, days);
-            _cache.Set("current_" + town + state, root, TimeSpan.FromMinutes(5));
+            _cache.Set(days + "forecast_" + town + state, root, TimeSpan.FromMinutes(5));
             resultsBlockTown.Text = $"{makeTitleCase(town)}";
             resultsBlockState.Text = $"{state.ToUpper()}";
             resultsBlockTemp.Text = root["current"]?["temp_f"]?.ToString() + "\u00b0F";
         }
 
 
-        var tempPanel = new StackPanel
+        forecastPanel = new WrapPanel
         {
             Orientation = Orientation.Horizontal,
             HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Top
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(10)
         };
+
+        scrollViewer = new ScrollViewer
+        {
+            Content = forecastPanel,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+        };
+
 
         resultsSection.Children.Remove(backButton);
 
@@ -277,11 +288,11 @@ public class FutureForecastTab : UserControl
             });
 
             border.Child = dayStack;
-            tempPanel.Children.Add(border);
+            forecastPanel.Children.Add(border);
 
         }
 
-        resultsSection.Children.Add(tempPanel);
+        resultsSection.Children.Add(scrollViewer);
         resultsSection.Children.Add(backButton);
 
 
@@ -339,6 +350,9 @@ public class FutureForecastTab : UserControl
         resultsBlockState.Text = String.Empty;
         resultsBlockTown.Text = String.Empty;
         resultsBlockTemp.Text = String.Empty;
+
+        forecastPanel.Children.Clear();
+
 
 
         // swap visibility
