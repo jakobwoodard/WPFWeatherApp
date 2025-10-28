@@ -43,7 +43,7 @@ Below are some of what the App looks like as of now (you can find these in the "
 
 **Future Forecast Search**
 
-![Alt text](/images/FutureForecast.png?raw=true "Optional Title")
+![Alt text](/images/ForecastDropdown.png?raw=true "Optional Title")
 
 **Future Forecast Result ScrollView**
 
