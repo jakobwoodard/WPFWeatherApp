@@ -171,6 +171,23 @@ public class WeatherTab : UserControl
         //SizeToContent = SizeToContent.Height;
         Content = rootlayout;
 
+        // To be used for multi-day forecast display
+        forecastPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(10)
+        };
+
+        // a scroll viewer to allow user to see all days if they don't normally fit the screen
+        scrollViewer = new ScrollViewer
+        {
+            Content = forecastPanel,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto
+        };
+
     }
 
     private IEnumerable GetDaysSelection()
@@ -204,7 +221,6 @@ public class WeatherTab : UserControl
         resultsSection.Visibility = Visibility.Visible;
         resultsBlockTemp.Text = "Loading...";
         JsonNode root;
-        Console.WriteLine(days);
 
         // Attempt to retrieve data
         if (_cache.TryGet<object>(town + country + state, out var weather))
@@ -246,22 +262,7 @@ public class WeatherTab : UserControl
         // If we want a mult-day forecast, create a new panel for the forecast objects
         if (!days.Equals("current"))
         {
-            // the panel to hold each day's forecast
-            forecastPanel = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Top,
-                Margin = new Thickness(10)
-            };
 
-            // a scroll viewer to allow user to see all days if they don't normally fit the screen
-            scrollViewer = new ScrollViewer
-            {
-                Content = forecastPanel,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto
-            };
 
             // To have the back button at the bottom of the page, we need to remove it before adding other elements
             resultsSection.Children.Remove(backButton);
@@ -317,38 +318,6 @@ public class WeatherTab : UserControl
         }
     }
 
-    private async Task SubmitFormAsyncInternational(string town, string country)
-    {
-        // Hide search section and show loading state
-        searchSection.Visibility = Visibility.Collapsed;
-        resultsSection.Visibility = Visibility.Visible;
-        resultsBlockTemp.Text = "Loading...";
-
-
-        // Attempt to retrieve data
-        if (_cache.TryGet<object>("current_" + town + country, out var weather))
-        {
-            string jsonResponse = _cache.Get("current_" + town + country).ToString();
-            Console.WriteLine("Using cached data...");
-            JsonNode? root = JsonNode.Parse(jsonResponse);
-            resultsBlockTown.Text = $"{makeTitleCase(town)}";
-            resultsBlockState.Text = $"{makeTitleCase(country)}";
-            resultsBlockTemp.Text = root?["current"]?["temp_f"]?.ToString() + "\u00b0F";
-            Console.WriteLine(root?["current"]?["temp_f"]?.ToString());
-        }
-
-        // date not in cache, so add it
-        else
-        {
-            Console.WriteLine("No cached data available... adding now....");
-            JsonNode jsonNode = await _apiService.makeRequest(town, "", country);
-            _cache.Set("current_" + town + country, jsonNode, TimeSpan.FromMinutes(5));
-            resultsBlockTown.Text = $"{makeTitleCase(town)}";
-            resultsBlockState.Text = $"{makeTitleCase(country)}";
-            resultsBlockTemp.Text = jsonNode["current"]?["temp_f"]?.ToString() + "\u00b0F";
-            Console.WriteLine(jsonNode["current"]?["temp_f"]?.ToString());
-        }
-    }
 
     private void Reset_Click(object sender, RoutedEventArgs e)
     {
@@ -402,11 +371,12 @@ public class WeatherTab : UserControl
     {
         return new List<string>
             {
-                "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
-                "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
-                "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
-                "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
-                "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY", "International"
+                "AK","AL","AR","AZ","CA","CO","CT","DE","FL","GA",
+                "HI","IA","ID","IL","IN","KS","KY","LA","MA","MD",
+                "ME","MI","MN","MO","MS","MT","NC","ND","NE","NH",
+                "NJ","NM","NV","NY","OH","OK","OR","PA","RI","SC",
+                "SD","TN","TX","UT","VA","VT","WA","WI","WV","WY","International"
+
             };
     }
 
