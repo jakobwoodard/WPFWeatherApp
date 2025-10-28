@@ -13,15 +13,19 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Microsoft.Extensions.Primitives;
 using Microsoft.VisualBasic;
+using System.Collections;
+using System.Configuration;
 
 
-public class CurrentForecastTab : UserControl
+public class WeatherTab : UserControl
 {
     private TextBox townTextbox;
     private ComboBox stateDropdown;
+    private ComboBox daysDropdown;
     private Label countryLabel;
     private TextBox countryTextBox;
     private Button buttonSubmit;
+    private Button backButton;
 
     private Grid rootlayout;
     private Grid searchSection;
@@ -29,11 +33,13 @@ public class CurrentForecastTab : UserControl
     private TextBlock resultsBlockTemp;
     private TextBlock resultsBlockTown;
     private TextBlock resultsBlockState;
+    private ScrollViewer scrollViewer;
+    private StackPanel forecastPanel;
 
     private readonly CacheService _cache;
 
     private readonly APIService _apiService;
-    public CurrentForecastTab(CacheService cache, APIService apiService)
+    public WeatherTab(CacheService cache, APIService apiService)
     {
         _cache = cache;
         _apiService = apiService;
@@ -46,6 +52,7 @@ public class CurrentForecastTab : UserControl
 
 
         searchSection = new() { Margin = new Thickness(5) };
+        searchSection.RowDefinitions.Add(new RowDefinition());
         searchSection.RowDefinitions.Add(new RowDefinition());
         searchSection.RowDefinitions.Add(new RowDefinition());
         searchSection.RowDefinitions.Add(new RowDefinition());
@@ -85,17 +92,27 @@ public class CurrentForecastTab : UserControl
         countryTextBox.Visibility = Visibility.Collapsed;
         searchSection.Children.Add(countryTextBox);
 
+        Label daysLabel = new() { Content = "Days:", Foreground = Brushes.DodgerBlue };
+        Grid.SetRow(daysLabel, 3);
+        searchSection.Children.Add(daysLabel);
+
+        daysDropdown = new() { Margin = new Thickness(2) };
+        Grid.SetRow(daysDropdown, 3);
+        Grid.SetColumn(daysDropdown, 1);
+        daysDropdown.ItemsSource = GetDaysSelection();
+        searchSection.Children.Add(daysDropdown);
+
         // Create the two buttons, assign both to the third row and
         // assign the second button to the second column.
         Button buttonReset = new() { Margin = new Thickness(2), Content = "Reset" };
         buttonReset.Click += Reset_Click;
-        Grid.SetRow(buttonReset, 3);
+        Grid.SetRow(buttonReset, 4);
         searchSection.Children.Add(buttonReset);
 
         buttonSubmit = new() { Margin = new Thickness(2), Content = "Submit" };
         buttonSubmit.Click += async (sender, e) => await Submit_ClickAsync(sender, e);
         Grid.SetColumn(buttonSubmit, 1);
-        Grid.SetRow(buttonSubmit, 3);
+        Grid.SetRow(buttonSubmit, 4);
         searchSection.Children.Add(buttonSubmit);
 
         resultsSection = new StackPanel
@@ -129,7 +146,7 @@ public class CurrentForecastTab : UserControl
             Foreground = Brushes.DodgerBlue
         };
 
-        var backButton = new Button
+        backButton = new Button
         {
             Content = "Back to Search",
             Width = 150
@@ -156,6 +173,14 @@ public class CurrentForecastTab : UserControl
 
     }
 
+    private IEnumerable GetDaysSelection()
+    {
+        return new List<string>
+        {
+            "Current", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"
+        };
+    }
+
     private async Task Submit_ClickAsync(object sender, RoutedEventArgs e)
     {
         buttonSubmit.IsEnabled = false; // disable button until processing is done
@@ -163,50 +188,132 @@ public class CurrentForecastTab : UserControl
         string town = townTextbox.Text.ToLower();
         string state = stateDropdown.Text.ToLower();
         string country = countryTextBox.Text.ToLower();
-        if (state.Equals("international"))
-        {
-            await SubmitFormAsyncInternational(town.Trim(), country.Trim());
-        }
-        else
-        {
-            await SubmitFormAsync(town.Trim(), state.Trim());
-        }
+        string days = daysDropdown.Text.ToLower();
+
+        await SubmitFormAsync(town.Trim(), state.Trim(), country.Trim(), days.Trim());
 
 
 
         buttonSubmit.IsEnabled = true; // enable button after processing
     }
 
-    private async Task SubmitFormAsync(string town, string state)
+    private async Task SubmitFormAsync(string town, string state, string country, string days)
     {
         // Hide search section and show loading state
         searchSection.Visibility = Visibility.Collapsed;
         resultsSection.Visibility = Visibility.Visible;
         resultsBlockTemp.Text = "Loading...";
-
+        JsonNode root;
+        Console.WriteLine(days);
 
         // Attempt to retrieve data
-        if (_cache.TryGet<object>("current_" + town + state, out var weather))
+        if (_cache.TryGet<object>(town + country + state, out var weather))
         {
-            string jsonResponse = _cache.Get("current_" + town + state).ToString();
+            //string jsonResponse = _cache.Get(town + country + state).ToString();
             Console.WriteLine("Using cached data...");
-            JsonNode? root = JsonNode.Parse(jsonResponse);
+            root = JsonNode.Parse(weather.ToString()!)!;
             resultsBlockTown.Text = $"{makeTitleCase(town)}";
-            resultsBlockState.Text = $"{state.ToUpper()}";
-            resultsBlockTemp.Text = root?["current"]?["temp_f"]?.ToString() + "\u00b0F";
-            Console.WriteLine(root?["current"]?["temp_f"]?.ToString());
+            if (!country.Equals(String.Empty))
+            {
+                resultsBlockState.Text = $"{makeTitleCase(country)}";
+            }
+            else
+            {
+                resultsBlockState.Text = $"{state.ToUpper()}";
+            }
+
+            resultsBlockTemp.Text = root["current"]?["temp_f"]?.ToString() + "\u00b0F";
         }
 
         // date not in cache, so add it
         else
         {
             Console.WriteLine("No cached data available... adding now....");
-            JsonNode jsonNode = await _apiService.makeRequest("current", town, state);
-            _cache.Set("current_" + town + state, jsonNode, TimeSpan.FromMinutes(5));
+            root = await _apiService.makeRequest(town, state, country);
+            _cache.Set(town + country + state, root, TimeSpan.FromMinutes(5));
             resultsBlockTown.Text = $"{makeTitleCase(town)}";
-            resultsBlockState.Text = $"{state.ToUpper()}";
-            resultsBlockTemp.Text = jsonNode["current"]?["temp_f"]?.ToString() + "\u00b0F";
-            Console.WriteLine(jsonNode["current"]?["temp_f"]?.ToString());
+            if (!country.Equals(String.Empty))
+            {
+                resultsBlockState.Text = $"{makeTitleCase(country)}";
+            }
+            else
+            {
+                resultsBlockState.Text = $"{state.ToUpper()}";
+            }
+            resultsBlockTemp.Text = root["current"]?["temp_f"]?.ToString() + "\u00b0F";
+        }
+
+        // If we want a mult-day forecast, create a new panel for the forecast objects
+        if (!days.Equals("current"))
+        {
+            // the panel to hold each day's forecast
+            forecastPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(10)
+            };
+
+            // a scroll viewer to allow user to see all days if they don't normally fit the screen
+            scrollViewer = new ScrollViewer
+            {
+                Content = forecastPanel,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto
+            };
+
+            // To have the back button at the bottom of the page, we need to remove it before adding other elements
+            resultsSection.Children.Remove(backButton);
+
+            // get the entire 14-day forecast (that's how it's stored in the cache)
+            var dayNodes = root?["forecast"]?["forecastday"]?.AsArray();
+
+            // but only create elements for the desired day amount
+            for (int i = 0; i < int.Parse(days); i++)
+            {
+                // the data for the ith day
+                var dayNode = dayNodes?[i];
+
+                // border to separate elements
+                var border = new Border
+                {
+                    BorderBrush = Brushes.LightGray,
+                    BorderThickness = new Thickness(1),
+                    CornerRadius = new CornerRadius(6),
+                    Margin = new Thickness(5),
+                    Padding = new Thickness(10),
+                };
+
+                StackPanel dayStack = new StackPanel();
+
+                dayStack.Children.Add(new TextBlock
+                {
+                    FontSize = 25,
+                    Text = dayNode?["date"]?.ToString(),
+                    TextAlignment = TextAlignment.Center,
+                    Margin = new Thickness(0, 0, 0, 20),
+                    Foreground = Brushes.DodgerBlue
+
+                });
+
+                dayStack.Children.Add(new TextBlock
+                {
+                    FontSize = 25,
+                    Text = dayNode?["day"]?["avgtemp_f"]?.ToString() + "\u00b0F",
+                    TextAlignment = TextAlignment.Center,
+                    Margin = new Thickness(0, 0, 0, 20),
+                    Foreground = Brushes.DodgerBlue
+                });
+
+                border.Child = dayStack;
+                forecastPanel.Children.Add(border);
+            }
+
+            // after we have created the scroll viewer with all the new elements, add it to the results section
+            resultsSection.Children.Add(scrollViewer);
+            // add the "back" button back
+            resultsSection.Children.Add(backButton);
         }
     }
 
@@ -234,7 +341,7 @@ public class CurrentForecastTab : UserControl
         else
         {
             Console.WriteLine("No cached data available... adding now....");
-            JsonNode jsonNode = await _apiService.makeRequest("current", town, country);
+            JsonNode jsonNode = await _apiService.makeRequest(town, "", country);
             _cache.Set("current_" + town + country, jsonNode, TimeSpan.FromMinutes(5));
             resultsBlockTown.Text = $"{makeTitleCase(town)}";
             resultsBlockState.Text = $"{makeTitleCase(country)}";
@@ -276,10 +383,14 @@ public class CurrentForecastTab : UserControl
         stateDropdown.Text = String.Empty;
         townTextbox.Clear();
         countryTextBox.Clear();
+        daysDropdown.Text = String.Empty;
 
         resultsBlockState.Text = String.Empty;
         resultsBlockTown.Text = String.Empty;
         resultsBlockTemp.Text = String.Empty;
+
+        if (forecastPanel != null)
+            forecastPanel.Children.Clear();
 
 
         // swap visibility

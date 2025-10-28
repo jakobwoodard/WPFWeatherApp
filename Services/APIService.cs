@@ -2,6 +2,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 
 public class APIService
 {
@@ -11,7 +12,8 @@ public class APIService
     public APIService()
     {
         var variableName = "WEATHER_API_KEY";
-        _API_KEY = Environment.GetEnvironmentVariable(variableName, EnvironmentVariableTarget.User);
+        // Load the API KEY. The key CANNOT be null or else no request can be made
+        _API_KEY = Environment.GetEnvironmentVariable(variableName, EnvironmentVariableTarget.User)!;
         if (string.IsNullOrEmpty(variableName))
         {
             Console.WriteLine($"Environment variable '{_API_KEY}' is not set.");
@@ -20,19 +22,9 @@ public class APIService
         _client = new HttpClient();
     }
 
-    public async Task<JsonNode> makeRequest(string requestType, string town, string state, string days = "")
+    public async Task<JsonNode> makeRequest(string town, string state, string country)
     {
-        switch (requestType)
-        {
-            case "current":
-                return await getCurrentWeather(town, state);
-            case "forecast":
-                return await getWeatherForecast(town, state, days);
-            default:
-                return null;
-
-
-        }
+        return await getWeatherForecast(town, state, country, "14");
     }
 
     private async Task<JsonNode> getCurrentWeather(string town, string state)
@@ -46,26 +38,34 @@ public class APIService
             string responseBody = await response.Content.ReadAsStringAsync();
 
             Console.WriteLine("Successfully fetched API response....");
-            return JsonNode.Parse(responseBody);
+            return JsonNode.Parse(responseBody)!;
 
         }
 
         catch (HttpRequestException e)
         {
             Console.WriteLine($"Request error: {e.Message}");
-            return JsonNode.Parse("{\"Status\": \"Failed to get the request\"}");
+            return JsonNode.Parse("{\"Status\": \"Failed to get the request\"}")!;
         }
         catch (Exception e)
         {
             Console.WriteLine($"An unexpected error occurred: {e.Message}");
-            return JsonNode.Parse("{\"Status\": \"An unexpected error occurred.\"}");
+            return JsonNode.Parse("{\"Status\": \"An unexpected error occurred.\"}")!;
         }
 
     }
 
-    private async Task<JsonNode> getWeatherForecast(string town, string state, string days)
+    private async Task<JsonNode> getWeatherForecast(string town, string state, string country, string days)
     {
-        var request = "/forecast.json?key=" + _API_KEY + "&q=" + town + ", " + state + "&days=" + days + "&aqi=no&alerts=no";
+        string request;
+        if (!country.Equals(String.Empty))
+        {
+            request = "/forecast.json?key=" + _API_KEY + "&q=" + town + ", " + country + "&days=" + days + "&aqi=no&alerts=no";
+        }
+        else
+        {
+            request = "/forecast.json?key=" + _API_KEY + "&q=" + town + ", " + state + "&days=" + days + "&aqi=no&alerts=no";
+        }
         try
         {
             Console.WriteLine("Attempting an API call....");
@@ -74,19 +74,19 @@ public class APIService
             string responseBody = await response.Content.ReadAsStringAsync();
 
             Console.WriteLine("Successfully fetched API response....");
-            return JsonNode.Parse(responseBody);
+            return JsonNode.Parse(responseBody)!;
 
         }
 
         catch (HttpRequestException e)
         {
             Console.WriteLine($"Request error: {e.Message}");
-            return JsonNode.Parse("{\"Status\": \"Failed to get the request\"}");
+            return JsonNode.Parse("{\"Status\": \"Failed to get the request\"}")!;
         }
         catch (Exception e)
         {
             Console.WriteLine($"An unexpected error occurred: {e.Message}");
-            return JsonNode.Parse("{\"Status\": \"An unexpected error occurred.\"}");
+            return JsonNode.Parse("{\"Status\": \"An unexpected error occurred.\"}")!;
         }
 
     }

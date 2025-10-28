@@ -38,13 +38,8 @@ public partial class MainWindow : Window
 
         tabControl.Items.Add(new TabItem
         {
-            Header = "Current Forecast",
-            Content = new CurrentForecastTab(_cache, _apiService),
-        });
-        tabControl.Items.Add(new TabItem
-        {
-            Header = "Future Forecast",
-            Content = new FutureForecastTab(_cache, _apiService)
+            Header = "Weather",
+            Content = new WeatherTab(_cache, _apiService),
         });
         this.SizeToContent = SizeToContent.WidthAndHeight;
 
