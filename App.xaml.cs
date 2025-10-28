@@ -13,7 +13,7 @@ namespace WPFWeatherApp;
 /// </summary>
 public partial class App : Application
 {
-    public static IHost AppHost { get; private set; }
+    public static IHost? AppHost { get; private set; }
 
     public App()
     {
@@ -29,7 +29,7 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
 
-        await AppHost.StartAsync();
+        await AppHost!.StartAsync();
 
         // Create and show your desired main window
         MainWindow window = AppHost.Services.GetRequiredService<MainWindow>(); // Or any other custom Window class
@@ -45,7 +45,7 @@ public partial class App : Application
 
     protected override async void OnExit(ExitEventArgs e)
     {
-        await AppHost.StopAsync();
+        await AppHost!.StopAsync();
         AppHost.Dispose();
         base.OnExit(e);
     }
