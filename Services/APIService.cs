@@ -22,12 +22,12 @@ public class APIService
         _client = new HttpClient();
     }
 
-    public async Task<JsonNode> makeRequest(string town, string state, string country)
+    public async Task<JsonNode> MakeRequest(string town, string state, string country)
     {
-        return await getWeatherForecast(town, state, country, "14");
+        return await GetWeatherForecast(town, state, country, "14");
     }
 
-    private async Task<JsonNode> getCurrentWeather(string town, string state)
+    private async Task<JsonNode> GetCurrentWeather(string town, string state)
     {
         var request = "/current.json?key=" + _API_KEY + "&q=" + town + ", " + state + "&aqi=no";
         try
@@ -55,7 +55,7 @@ public class APIService
 
     }
 
-    private async Task<JsonNode> getWeatherForecast(string town, string state, string country, string days)
+    private async Task<JsonNode> GetWeatherForecast(string town, string state, string country, string days)
     {
         string request;
         if (!country.Equals(String.Empty))

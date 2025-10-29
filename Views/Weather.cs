@@ -19,22 +19,22 @@ using System.Configuration;
 
 public class WeatherTab : UserControl
 {
-    private TextBox townTextbox;
-    private ComboBox stateDropdown;
-    private ComboBox daysDropdown;
-    private Label countryLabel;
-    private TextBox countryTextBox;
-    private Button buttonSubmit;
-    private Button backButton;
+    private readonly TextBox townTextbox;
+    private readonly ComboBox stateDropdown;
+    private readonly ComboBox daysDropdown;
+    private readonly Label countryLabel;
+    private readonly TextBox countryTextBox;
+    private readonly Button buttonSubmit;
+    private readonly Button backButton;
 
-    private Grid rootlayout;
-    private Grid searchSection;
-    private StackPanel resultsSection;
-    private TextBlock resultsBlockTemp;
-    private TextBlock resultsBlockTown;
-    private TextBlock resultsBlockState;
-    private ScrollViewer scrollViewer;
-    private StackPanel forecastPanel;
+    private readonly Grid rootlayout;
+    private readonly Grid searchSection;
+    private readonly StackPanel resultsSection;
+    private readonly TextBlock resultsBlockTemp;
+    private readonly TextBlock resultsBlockTown;
+    private readonly TextBlock resultsBlockState;
+    private ScrollViewer? scrollViewer;
+    private StackPanel? forecastPanel;
 
     private readonly CacheService _cache;
 
@@ -171,31 +171,16 @@ public class WeatherTab : UserControl
         //SizeToContent = SizeToContent.Height;
         Content = rootlayout;
 
-        // To be used for multi-day forecast display
-        forecastPanel = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Top,
-            Margin = new Thickness(10)
-        };
 
-        // a scroll viewer to allow user to see all days if they don't normally fit the screen
-        scrollViewer = new ScrollViewer
-        {
-            Content = forecastPanel,
-            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto
-        };
 
     }
 
-    private IEnumerable GetDaysSelection()
+    private static List<string> GetDaysSelection()
     {
-        return new List<string>
-        {
+        return
+        [
             "Current", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"
-        };
+        ];
     }
 
     private async Task Submit_ClickAsync(object sender, RoutedEventArgs e)
@@ -228,10 +213,10 @@ public class WeatherTab : UserControl
             //string jsonResponse = _cache.Get(town + country + state).ToString();
             Console.WriteLine("Using cached data...");
             root = JsonNode.Parse(weather.ToString()!)!;
-            resultsBlockTown.Text = $"{makeTitleCase(town)}";
-            if (!country.Equals(String.Empty))
+            resultsBlockTown.Text = $"{MakeTitleCase(town)}";
+            if (!country.Equals(string.Empty))
             {
-                resultsBlockState.Text = $"{makeTitleCase(country)}";
+                resultsBlockState.Text = $"{MakeTitleCase(country)}";
             }
             else
             {
@@ -245,12 +230,12 @@ public class WeatherTab : UserControl
         else
         {
             Console.WriteLine("No cached data available... adding now....");
-            root = await _apiService.makeRequest(town, state, country);
+            root = await _apiService.MakeRequest(town, state, country);
             _cache.Set(town + country + state, root, TimeSpan.FromMinutes(5));
-            resultsBlockTown.Text = $"{makeTitleCase(town)}";
-            if (!country.Equals(String.Empty))
+            resultsBlockTown.Text = $"{MakeTitleCase(town)}";
+            if (!country.Equals(string.Empty))
             {
-                resultsBlockState.Text = $"{makeTitleCase(country)}";
+                resultsBlockState.Text = $"{MakeTitleCase(country)}";
             }
             else
             {
@@ -259,9 +244,26 @@ public class WeatherTab : UserControl
             resultsBlockTemp.Text = root["current"]?["temp_f"]?.ToString() + "\u00b0F";
         }
 
-        // If we want a mult-day forecast, create a new panel for the forecast objects
+        // If we want a multi-day forecast, create a new panel for the forecast objects
         if (!days.Equals("current"))
         {
+
+            // To be used for multi-day forecast display
+            forecastPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Top,
+                Margin = new Thickness(10)
+            };
+
+            // a scroll viewer to allow user to see all days if they don't normally fit the screen
+            scrollViewer = new ScrollViewer
+            {
+                Content = forecastPanel,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto
+            };
 
 
             // To have the back button at the bottom of the page, we need to remove it before adding other elements
@@ -327,7 +329,7 @@ public class WeatherTab : UserControl
     }
 
     // debug method to show all cache contents
-    private void displayCacheContents()
+    private void DisplayCacheContents()
     {
         if (_cache.GetAllKeys().ToList().Count == 0)
         {
@@ -358,8 +360,7 @@ public class WeatherTab : UserControl
         resultsBlockTown.Text = String.Empty;
         resultsBlockTemp.Text = String.Empty;
 
-        if (forecastPanel != null)
-            forecastPanel.Children.Clear();
+        forecastPanel?.Children.Clear();
 
 
         // swap visibility
@@ -367,17 +368,17 @@ public class WeatherTab : UserControl
         searchSection.Visibility = Visibility.Visible;
     }
 
-    private List<string> GetUsStateAbbreviations()
+    private static List<string> GetUsStateAbbreviations()
     {
-        return new List<string>
-            {
+        return
+            [
                 "AK","AL","AR","AZ","CA","CO","CT","DE","FL","GA",
                 "HI","IA","ID","IL","IN","KS","KY","LA","MA","MD",
                 "ME","MI","MN","MO","MS","MT","NC","ND","NE","NH",
                 "NJ","NM","NV","NY","OH","OK","OR","PA","RI","SC",
                 "SD","TN","TX","UT","VA","VT","WA","WI","WV","WY","International"
 
-            };
+            ];
     }
 
     private void StateDropdown_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -398,10 +399,10 @@ public class WeatherTab : UserControl
     }
 
     // Helper method to take a string and return a title cased string (making the first letter of each word capital)
-    private string makeTitleCase(string name)
+    private string MakeTitleCase(string name)
     {
         string[] words = name.Split(" ");
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new();
         foreach (string s in words)
         {
             sb.Append(char.ToUpper(s[0]) + s.Substring(1) + " ");

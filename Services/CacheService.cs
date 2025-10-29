@@ -2,15 +2,10 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-public class CacheService
+public class CacheService(IMemoryCache cache)
 {
-    private readonly IMemoryCache _cache;
-    private readonly HashSet<string> _keys = new();
-
-    public CacheService(IMemoryCache cache)
-    {
-        _cache = cache;
-    }
+    private readonly IMemoryCache _cache = cache;
+    private readonly HashSet<string> _keys = [];
 
     public T? GetOrCreate<T>(string key, Func<ICacheEntry, T> factory)
     {
