@@ -324,7 +324,7 @@ public class WeatherTab : UserControl
     private void Reset_Click(object sender, RoutedEventArgs e)
     {
         townTextbox.Clear();
-        stateDropdown.Text = String.Empty;
+        stateDropdown.Text = string.Empty;
         countryTextBox.Clear();
     }
 
@@ -351,14 +351,14 @@ public class WeatherTab : UserControl
     private void ShowSearchSection()
     {
         // clear forms before going back
-        stateDropdown.Text = String.Empty;
+        stateDropdown.Text = string.Empty;
         townTextbox.Clear();
         countryTextBox.Clear();
-        daysDropdown.Text = String.Empty;
+        daysDropdown.Text = string.Empty;
 
-        resultsBlockState.Text = String.Empty;
-        resultsBlockTown.Text = String.Empty;
-        resultsBlockTemp.Text = String.Empty;
+        resultsBlockState.Text = string.Empty;
+        resultsBlockTown.Text = string.Empty;
+        resultsBlockTemp.Text = string.Empty;
 
         forecastPanel?.Children.Clear();
 
@@ -399,13 +399,13 @@ public class WeatherTab : UserControl
     }
 
     // Helper method to take a string and return a title cased string (making the first letter of each word capital)
-    private string MakeTitleCase(string name)
+    private static string MakeTitleCase(string name)
     {
         string[] words = name.Split(" ");
         StringBuilder sb = new();
         foreach (string s in words)
         {
-            sb.Append(char.ToUpper(s[0]) + s.Substring(1) + " ");
+            sb.Append(char.ToUpper(s[0]) + s[1..] + " ");
         }
         return sb.ToString().Trim();
     }
